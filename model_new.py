@@ -2,7 +2,7 @@ import random
 import numpy as np
 
 
-class Network:
+class NeuralNetwork:
     def __init__(self, sizes):
         self.num_layers = len(sizes)
         self.sizes = sizes
@@ -19,16 +19,16 @@ class Network:
     def SGD(self, training_data, epochs, mini_batch_size, eta, test_data=None):
         if test_data:
             n_test = len(test_data)
-            n = len(training_data)
-            for i in range(epochs):
-                random.shuffle(training_data)
-                mini_batches = [training_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)]
-                for mini_batch in mini_batches:
-                    self.update_mini_batch(mini_batch, eta)
-                if test_data:
-                    print(f"Epoch {i}: {self.evaluate(test_data)}, {n_test}")
-                else:
-                    print(f"Epoch {i} complete.")
+        n = len(training_data)
+        for i in range(epochs):
+            random.shuffle(training_data)
+            mini_batches = [training_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)]
+            for mini_batch in mini_batches:
+                self.update_mini_batch(mini_batch, eta)
+            if test_data:
+                return f"Epoch {i}: {self.evaluate(test_data)}, {n_test}"
+            else:
+                return f"Epoch {i} complete."
 
 
     def update_mini_batch(self, mini_batch, eta):
