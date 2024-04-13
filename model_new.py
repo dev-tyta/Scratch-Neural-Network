@@ -1,93 +1,53 @@
-import numpy as np
 import random
+import numpy as np
 
 
-def sigmoid(z):
-    return 1.0/(1.0 + np.exp(-z))
-
-def sigmoid_prime(z):
-    return sigmoid(z)*(1-sigmoid(z))
-
-def vectorized_result(j):
-    e = np.zeros((10, 1))
-    e[j] = 1.0
-    return e
+class Network:
+    def __init__(self, sizes):
+        self.num_layers = len(sizes)
+        self.sizes = sizes
+        self.biases = [np.random.randn(y,1) for y in sizes[1:]]
+        self.weights = [np.random.randn(y,x) for x,y in zip(sizes[:-1], sizes[1:])]
 
 
-class NeuralNetwork:
+    def feedforward(self, a):
+        for b, w in zip(self.biases, self.weights):
+            a = sigmoid(np.dot(w,a)+ b)
+        return a
     
-    def __init__(self, layers):
-        self.h_biases = np.random.randn(layers[1],1)
-        self.o_biases = np.random.randn(layers[2],1)
-        
-        self.h_weights = np.random.randn(layers[1],layers[0])
-        self.o_weights = np.random.randn(layers[2],layers[1])
-    
-    def forward_propagation(self, x):
-        a = sigmoid(np.dot(self.h_weights, x) + self.h_biases)
-        
-        output = sigmoid(np.dot(self.o_weights, a) + self.o_biases)
-        
-        return output
-    
-    def update_mini_batch(self, batch, l_rate):
-        o_b = np.zeros(self.o_biases.shape)
-        h_b = np.zeros(self.h_biases.shape)
-        
-        o_w = np.zeros(self.o_weights.shape)
-        h_w = np.zeros(self.h_weights.shape)
-        
-        for x, y in batch:
-            # Ensure x is a column vector. This may already be the case, but let's be sure.
-            x = x.reshape(-1, 1)  # Reshaping x to have the proper shape
-            
-            # Ensure y is properly vectorized. Assuming y is a scalar representing the class, vectorized_result(j) is used.
-            y = vectorized_result(y) if not isinstance(y, np.ndarray) else y  # Vectorizing y
-            
-            o_del_b, h_del_b, o_del_w, h_del_w = self.backprop(x, y)
-            
-            o_b = o_b + o_del_b
-            h_b = h_b + h_del_b
-            o_w = o_w + o_del_w
-            h_w = h_w + h_del_w
-        
-        self.o_weights = self.o_weights - (l_rate/len(batch))*o_w
-        self.h_weights = self.h_weights - (l_rate/len(batch))*h_w
-        self.o_biases = self.o_biases - (l_rate/len(batch))*o_b
-        self.h_biases = self.h_biases - (l_rate/len(batch))*h_b
 
-    
+    def SGD(self, training_data, epochs, mini_batch_size, eta, test_data=None):
+        if test_data:
+            n_test = len(test_data)
+            n = len(training_data)
+            for i in range(epochs):
+                random.shuffle(training_data)
+                mini_batches = [training_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)]
+                for mini_batch in mini_batches:
+                    self.update_mini_batch(mini_batch, eta)
+                if test_data:
+                    print(f"Epoch {i}: {self.evaluate(test_data)}, {n_test}")
+                else:
+                    print(f"Epoch {i} complete.")
+
+
+    def update_mini_batch(self, mini_batch, eta):
+        nabla_b = [np.zeros(b.shape) for b in self.biases]
+        nabla_w = [np.zeros(w.shape) for w in self.weights]
+        for x, y in mini_batch:
+            delta_nabla_b, delta_nabla_w = self.backprop(x, y)
+            nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
+            nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+
+        self.weights = [w-(eta/len(mini_batch))*nw for w, nw in zip(self.weights, nabla_w)]
+        self.biases = [b-(eta/len(mini_batch))* nb for b, nb in zip(self.biases, nabla_b)]
+
+
     def backprop(self, x, y):
-        z_h = np.dot(self.h_weights, x) + self.h_biases
-        a_h = sigmoid(z_h)
-        
-        z_o = np.dot(self.o_weights, a_h) + self.o_biases
-        predicted = sigmoid(z_o)
-        
-        delta = (predicted - y) * sigmoid_prime(z_o)
-        
-        o_del_b = delta
-        o_del_w = np.dot(delta, a_h.transpose())
-        
-        delta = np.dot(self.o_weights.transpose(), delta) * sigmoid_prime(z_h)
-        
-        h_del_b = delta
-        h_del_w = np.dot(delta, x.transpose())
-        
-        return (o_del_b, h_del_b, o_del_w, h_del_w)
-        
-    def fit(self, train_data, epochs, mini_batch_size, learning_rate):
-        n = len(train_data)
-        for i in range(epochs):
-            random.shuffle(train_data)
-            batches = [train_data[j:j+mini_batch_size] for j in range(0,n, mini_batch_size)]
-            for batch in batches:
-                self.update_mini_batch(batch, learning_rate)
-            print("epoch {} completed".format(i))
-    
-    def accuracy(self, test_data):
-        test_results = [(np.argmax(self.forward_propagation(x)), y)
-                        for (x, y) in test_data]
-        return sum(int(x == y) for (x, y) in test_results)
+        nabla_b = [np.zeros(b.shape) for b in self.biases]
+        nabla_w = [np.zeros(w.shape) for w in self.weights]
 
+        activation = x
+        activations = [x]
 
+        
