@@ -1,8 +1,6 @@
 #### Libraries
 # Standard library
 import random
-import string
-import binascii
 import numpy as np
 
 class NeuralNetwork:    
