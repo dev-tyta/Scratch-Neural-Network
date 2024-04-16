@@ -59,19 +59,28 @@ class NeuralNetwork:
             nabla_b[-l] = delta
             nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
         return (nabla_b, nabla_w)
+    
+    def predict(self, x):
+        """Return the predicted output for the given input vector x."""
+        # Apply feedforward to get the output vector
+        output = self.feedforward(x)
+
+        # Apply a threshold to the output
+        threshold = 0.7  # Adjust this value based on your specific problem
+        predicted_label = (output > threshold).astype(int)
+
+        return predicted_label
 
     def evaluate(self, test_data):
-        test_results = [(self.test_against_threshold(x, 0.9), np.argmax(y)) for (x, y) in test_data]
-        return sum(int(x == y) for (x, y) in test_results)
+        """Return the number of test examples for which the neural network
+        outputs the correct result. The neural network's output is assumed to be
+        the index of whichever neuron in the final layer has the highest activation."""
 
-    def test_against_threshold(self, vector, threshold):
-        out = [item for sublist in self.feedforward(vector).tolist() for item in sublist]
-        s = sum(out)
-        m = max(out)
-        index = -1
-        if (m > threshold):
-            index = out.index(m)
-        return index
+        # Make predictions for each test example
+        test_results = [(np.argmax(self.feedforward(x)), y) for (x, y) in test_data]
+
+        # Compare the predictions with the actual labels
+        return sum(int(y_pred == y) for (y_pred, y) in test_results)
 
     def cost_derivative(self, output_activations, y):
         return (output_activations-y)   
