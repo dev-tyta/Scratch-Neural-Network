@@ -75,7 +75,7 @@ class NeuralNetwork:
     def cost_derivative(self, output_activations, y):
         return (output_activations-y)   
         
-# auxiliary math functions
+
 def sigmoid(z):
         return 1.0/(1.0+np.exp(-z))
 
