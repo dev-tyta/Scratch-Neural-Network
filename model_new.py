@@ -23,6 +23,7 @@ class NeuralNetwork:
             mini_batches = [training_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)]
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
+            print("Epoch {0}: {1} / {2}".format(j, self.evaluate(training_data), n))
 
     def update_mini_batch(self, mini_batch, eta):
         nabla_b = [np.zeros(b.shape) for b in self.biases]
